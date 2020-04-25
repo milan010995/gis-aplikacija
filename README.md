@@ -1,2 +1,1 @@
-# gis-aplikacija
-gis-app
+# gis-app
