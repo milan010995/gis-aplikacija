@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Backend_App.Models;
 using Backend_App.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -19,11 +20,13 @@ namespace Backend_App.Controllers
 
         private readonly ILogger<WeatherForecastController> _logger;
         private readonly VehicleService _vehicleService;
+        private readonly SensorsService _sensorService;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger, VehicleService vehicleService)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, VehicleService vehicleService, SensorsService sensorsService)
         {
             _logger = logger;
             _vehicleService = vehicleService;
+            _sensorService = sensorsService;
         }
 
         [HttpGet]

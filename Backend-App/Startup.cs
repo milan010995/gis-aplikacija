@@ -1,9 +1,12 @@
+using Backend_App.EntityCore;
+using Backend_App.Models;
 using Backend_App.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -14,7 +17,7 @@ namespace Backend_App
     {
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            Configuration = configuration;  
         }
 
         public IConfiguration Configuration { get; }
@@ -29,11 +32,17 @@ namespace Backend_App
                 configuration.RootPath = "ClientApp/build";
             });
 
+            #region DbContext
+
+            services.AddDbContext<PostgreDbContext>(option =>
+              option.UseNpgsql(Configuration.GetConnectionString("PostgreContext"), o => o.SetPostgresVersion(9, 6)));
+            
+            #endregion
 
             #region Dependency register
-            
-            services.AddSingleton<VehicleService, VehicleService>();
 
+            services.AddScoped<VehicleService, VehicleService>();
+            services.AddScoped<SensorsService, SensorsService>();
 
 
             #endregion
