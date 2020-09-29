@@ -26,9 +26,18 @@ namespace Backend_App.Controllers
 
 
         [HttpGet]
+
         public IEnumerable<VehiclePoint> Get(int count)
-        {
+        {           
             return _vehicleService.GetVehiclePointsFirst(4573, count);
+        }
+
+        [HttpPost]
+        [Route("CalculateFuelConsumption")]
+        public IActionResult CalculateFuelConsumption([FromBody] PointsViewModelcs model)
+        {
+            var pom = _vehicleService.KnjazevackaTest(4775, 200);
+            return new JsonResult("Uspesno poslato");
         }
     }
 }

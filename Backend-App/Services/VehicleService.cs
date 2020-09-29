@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Backend_App.Services
@@ -99,14 +100,26 @@ namespace Backend_App.Services
             return _vehicleList.Where(x => x.VID == vehicleId).ToList();
         }
 
-        public IList<VehiclePoint>GetVehiclePointsFirst(int vehicleId, int count)
+        public IList<VehiclePoint> GetVehiclePointsFirst(int vehicleId, int count)
         {
-          
+            return _postgreDbContext.VehiclePointDbSet
+                  .Where(v => v.VID == vehicleId)
+                  .Take(count)
+                  .ToList();
+        }
 
-          return _postgreDbContext.VehiclePointDbSet
-                .Where(v => v.VID == vehicleId)
-                .Take(count)
-                .ToList();
+        public IList<VehiclePoint> KnjazevackaTest(int vehicleId, int count)
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.Append("SELECT  ST_Distance(ST_Transform(ST_SetSRID(ST_Point(VP.\"Lat\", VP.\"Lon\"), 4326), 2163), ST_Transform(ST_GeomFromText('LINESTRING(43.32501849354768 21.906478419185614, 43.32226947693061 21.91263677108381, 43.31909858168961 21.91956759917829)', 4326), 2163)) AS Distance, ");
+            stringBuilder.Append("VP.\"Lat\", VP.\"Lon\", VP.\"DateTime\", SD.\"Value\" FROM public.\"SensorData\" AS SD INNER JOIN public.\"VehiclePoint\" AS VP ON SD.\"DateTime\" = VP.\"DateTime\" ");
+            stringBuilder.Append(" where VP.\"VID\" = 4578 AND SD.\"Sensor\" = 8 AND ST_Distance(ST_Transform(ST_SetSRID(ST_Point(VP.\"Lat\", VP.\"Lon\"), 4326), 2163),  ST_Transform(ST_GeomFromText('LINESTRING(43.32501849354768 21.906478419185614, 43.32226947693061 21.91263677108381, 43.31909858168961 21.91956759917829)', 4326), 2163)) < 10 ");
+            stringBuilder.Append(" ORDER BY VP.\"Id\" ASC LIMIT 10000;");
+
+  
+            var pom = _postgreDbContext.VehiclePointDbSet.FromSqlRaw(stringBuilder.ToString()).ToList();
+                           
+           return null;       
         }
     }
 }
