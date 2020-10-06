@@ -1,0 +1,41 @@
+SELECT * 
+FROM public."SensorData" INNER JOIN public."VehiclePoint" 
+ON public."SensorData"."VID" = public."VehiclePoint"."VID"
+where public."VehiclePoint"."VID" != 4578 AND public."SensorData"."Sensor" = 8
+ORDER BY public."SensorData"."Id" ASC LIMIT 1000
+
+
+SELECT ST_Distance(
+	ST_Transform(ST_GeomFromText('POINT(43.331731 21.891995)', 4326), 2163), 
+	ST_Transform(ST_GeomFromText('POINT(43.32902533676801 21.910438932996)', 4326), 2163)
+   )
+FROM public."VehiclePoint" 
+WHERE "Id" = 56405 AND "Point" IS NOT NULL 
+ORDER BY "Id" ASC LIMIT 100
+
+
+
+ SELECT  ST_Distance(ST_Transform(ST_SetSRID(ST_Point(VP."Lat", VP."Lon"), 4326), 2163), 
+				   ST_Transform(ST_GeomFromText('LINESTRING(43.32501849354768 21.906478419185614, 43.32226947693061 21.91263677108381, 43.31909858168961 21.91956759917829)', 4326), 2163)) AS Distance, VP."Lat", VP."Lon", VP."DateTime", SD."Value"
+   FROM public."SensorData" AS SD INNER JOIN public."VehiclePoint" AS VP
+   ON SD."DateTime" = VP."DateTime"
+   where VP."VID" = 4578 AND SD."Sensor" = 8 AND
+   ST_Distance(ST_Transform(ST_SetSRID(ST_Point(VP."Lat", VP."Lon"), 4326), 2163), 
+				   ST_Transform(ST_GeomFromText('LINESTRING(43.32501849354768 21.906478419185614, 43.32226947693061 21.91263677108381, 43.31909858168961 21.91956759917829)', 4326), 2163)) < 10
+   ORDER BY VP."Id" ASC LIMIT 10000;  
+   
+ SELECT VP."Lat", VP."Lon", VP."DateTime", VP."Speed", VP."VID", VP."Course", SD."Value"
+ FROM public."SensorData" AS SD INNER JOIN public."VehiclePoint" AS VP
+  ON SD."VID" = VP."VID"
+  where VP."VID" = 4578 AND SD."Sensor" = 8 AND SD."Value" != 0 AND VP."Speed" != 0 AND VP."Lat" != 43.33174 
+ORDER BY VP."Id" ASC LIMIT 10000
+
+
+-- same as geometry example but note units in meters - use sphere for slightly faster less accurate
+SELECT ST_Distance(gg1, gg2) As spheroid_dist, ST_Distance(gg1, gg2, false) As sphere_dist 
+FROM (SELECT
+	ST_GeographyFromText('SRID=4326;POINT(-72.1235 42.3521)') As gg1,
+	ST_GeographyFromText('SRID=4326;LINESTRING(-72.1260 42.45, -72.123 42.1546)') As gg2
+	) As foo;
+
+--ST_SetSRID(public."VehiclePoint"."Point"::geometry, 4326)
