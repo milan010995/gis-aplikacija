@@ -1,0 +1,57 @@
+SELECT ST_Distance('SRID=4326;POINT(' VP."Lat"  VP."Lon" ')'::geometry,
+				   'SRID=4326;LINESTRING(-72.1260 42.45, -72.123 42.1546)'::geometry) 
+FROM public."SensorData" AS SD INNER JOIN public."VehiclePoint" AS VP
+ON SD."VID" = VP."VID"
+where VP."VID" = 4578 AND SD."Sensor" = 8
+ORDER BY SD."Id" ASC LIMIT 100
+
+
+do $$
+DECLARE Idd integer;
+DECLARE Lat numeric;
+DECLARE Lon numeric;
+DECLARE cursor1 CURSOR FOR SELECT public."VehiclePoint"."Id", public."VehiclePoint"."Lat", public."VehiclePoint"."Lon" FROM public."VehiclePoint"
+BEGIN
+OPEN cursor1;
+FETCH FROM cursor1 into Idd, Lat, Lon;
+  Update public."VehiclePoint" SET public."VehiclePoint"."Point" = point(Lat, Lon) WHERE public."VehiclePoint"."Id" = Idd;
+END  
+end $$
+
+
+
+
+DO $$
+DECLARE
+   Idd integer;
+   transact integer;
+   counter integer := 0; 
+   len integer;
+   Lat numeric;
+   Lon numeric;
+BEGIN
+    len := (SELECT COUNT(*) FROM public."VehiclePoint");
+	raise notice '%', len;
+	loop 
+		exit when counter = len; 		
+		BEGIN		
+		Idd := (SELECT public."VehiclePoint"."Id"  FROM public."VehiclePoint" ORDER BY public."VehiclePoint"."DateTime" OFFSET counter ROWS FETCH NEXT 1 ROWS ONLY);
+		Lat := (SELECT public."VehiclePoint"."Lat"  FROM public."VehiclePoint" ORDER BY public."VehiclePoint"."DateTime" OFFSET counter ROWS FETCH NEXT 1 ROWS ONLY);
+		Lon := (SELECT public."VehiclePoint"."Lon"  FROM public."VehiclePoint" ORDER BY public."VehiclePoint"."DateTime" OFFSET counter ROWS FETCH NEXT 1 ROWS ONLY);
+		UPDATE public."VehiclePoint" SET "Point" = POINT(Lat, Lon) WHERE "Id" = Idd;
+		raise notice '%', counter;
+		
+		if (counter % 50 = 49) then
+		 COMMIT TRANSACTION;
+	    end if; 
+		
+		counter := counter + 1 ; 
+		END
+	end loop;
+	COMMIT TRANSACTION;
+END; $$
+
+
+https://postgis.net/docs/manual-2.1/ST_Distance.html
+
+http://postgis.net/workshops/postgis-intro/geometries.html
