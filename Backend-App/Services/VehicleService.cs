@@ -1,9 +1,12 @@
 ﻿using Backend_App.EntityCore;
+using Backend_App.EntityCore.Models;
 using Backend_App.Models;
+using Backend_App.QueryBuilder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SqlKata;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -16,6 +19,7 @@ namespace Backend_App.Services
 {
     public class VehicleService
     {
+        public static double MPG_TO_LKM = 0.354006189934;
         private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly IConfiguration _configuration;
         private readonly ILogger<VehicleService> _logger;
@@ -108,18 +112,43 @@ namespace Backend_App.Services
                   .ToList();
         }
 
-        public IList<VehiclePoint> KnjazevackaTest(int vehicleId, int count)
+        public IList<int> GetVehiclesIds()
         {
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.Append("SELECT  ST_Distance(ST_Transform(ST_SetSRID(ST_Point(VP.\"Lat\", VP.\"Lon\"), 4326), 2163), ST_Transform(ST_GeomFromText('LINESTRING(43.32501849354768 21.906478419185614, 43.32226947693061 21.91263677108381, 43.31909858168961 21.91956759917829)', 4326), 2163)) AS Distance, ");
-            stringBuilder.Append("VP.\"Lat\", VP.\"Lon\", VP.\"DateTime\", SD.\"Value\" FROM public.\"SensorData\" AS SD INNER JOIN public.\"VehiclePoint\" AS VP ON SD.\"DateTime\" = VP.\"DateTime\" ");
-            stringBuilder.Append(" where VP.\"VID\" = 4578 AND SD.\"Sensor\" = 8 AND ST_Distance(ST_Transform(ST_SetSRID(ST_Point(VP.\"Lat\", VP.\"Lon\"), 4326), 2163),  ST_Transform(ST_GeomFromText('LINESTRING(43.32501849354768 21.906478419185614, 43.32226947693061 21.91263677108381, 43.31909858168961 21.91956759917829)', 4326), 2163)) < 10 ");
-            stringBuilder.Append(" ORDER BY VP.\"Id\" ASC LIMIT 10000;");
+            return _postgreDbContext.VehiclePointDbSet
+                   .GroupBy(x => x.VID)
+                   .Select(p => p.Key).ToList();                   
+        }
 
-  
-            var pom = _postgreDbContext.VehiclePointDbSet.FromSqlRaw(stringBuilder.ToString()).ToList();
-                           
-           return null;       
+        public IList<DistancePointData> FuelConsum(List<Point> Points, int LessThenMeters, DateTimeWhere dateTimeWhere, int VehicleId, SensorType SensorType, int Limit = 0)
+        {
+            string select, fromm, orderBy;
+            StringBuilder stringBuilder = new StringBuilder();
+
+            fromm = $" FROM public.\"SensorData\" AS SD INNER JOIN public.\"VehiclePoint\" AS VP  ON SD.\"DateTime\" = VP.\"DateTime\" ";
+
+            string where = $"WHERE VP.\"VID\" = {VehicleId} AND SD.\"Sensor\" = {(int)SensorType} AND ";
+
+            if (dateTimeWhere != null)
+                where += QueryBuilder.QueryBuilder.DateTimeQuery(dateTimeWhere) + " AND ";
+
+            string DistanceSelector = string.Empty;
+            if (Points != null)
+            {
+                where += QueryBuilder.QueryBuilder.St_Distance($"ST_Transform(ST_SetSRID(ST_Point(VP.\"Lat\", VP.\"Lon\"), 4326), 2163)",
+                    QueryBuilder.QueryBuilder.Linestring(Points), LessThenMeters);
+
+                DistanceSelector = QueryBuilder.QueryBuilder.St_Distance($"ST_Transform(ST_SetSRID(ST_Point(VP.\"Lat\", VP.\"Lon\"), 4326), 2163)",
+                    QueryBuilder.QueryBuilder.Linestring(Points), null);
+            }
+
+            select = $"SELECT {DistanceSelector} AS \"Distance\", VP.\"Lat\", VP.\"Lon\", VP.\"DateTime\", SD.\"Value\", VP.\"VID\", VP.\"Speed\" ";
+            orderBy = $" ORDER BY VP.\"Id\" ASC LIMIT {Limit}";
+
+            string query = select + fromm + where + orderBy;
+
+            var pom = _postgreDbContext.DistancePoint.FromSqlRaw(query).ToList();
+
+            return pom;
         }
     }
 }

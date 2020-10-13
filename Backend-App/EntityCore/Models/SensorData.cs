@@ -7,39 +7,42 @@ using System.Threading.Tasks;
 
 namespace Backend_App.EntityCore.Models
 {
-    public class SensorData
+    public class SensorData : SensorClass
     {
         [Key]
         public int Id { get; set; }
 
         public int VID { get; set; }
 
-        public DateTime DateTime { get; set; }
+        public DateTime DateTime { get; set; }   
+    }
 
-        public Sensor Sensor { get; set; }
+    public class SensorClass
+    {
+        public SensorType Sensor { get; set; }
 
         public double Value { get; set; }
 
-        public static Sensor ParseSensorType(string sensor)
+        public static SensorType ParseSensorType(string sensor)
         {
             switch (sensor)
             {
-                case "Battery level": return Sensor.BateryLevel;
-                case "RPM": return Sensor.RPM;
-                case "Ignition": return Sensor.Ignition;
-                case "Odometar": return Sensor.Odometar;
-                case "Backup batery voltage": return Sensor.BackupBateryVoltage;
-                case "Backup batery current": return Sensor.BackupBateryCurrent;
-                case "Movement sensor": return Sensor.Movement;
-                case "Fuel level": return Sensor.FuelLevel;
-                case "Fuel rate (MPG)": return Sensor.FuelRateMPG;
-                case "Mileage": return Sensor.Mileage;
+                case "Battery level": return SensorType.BateryLevel;
+                case "RPM": return SensorType.RPM;
+                case "Ignition": return SensorType.Ignition;
+                case "Odometar": return SensorType.Odometar;
+                case "Backup batery voltage": return SensorType.BackupBateryVoltage;
+                case "Backup batery current": return SensorType.BackupBateryCurrent;
+                case "Movement sensor": return SensorType.Movement;
+                case "Fuel level": return SensorType.FuelLevel;
+                case "Fuel rate (MPG)": return SensorType.FuelRateMPG;
+                case "Mileage": return SensorType.Mileage;
             }
             throw new Exception("Sensor does not exists");
         }
     }
 
-    public enum Sensor
+    public enum SensorType
     {
         /// <summary>
         /// Battery level
